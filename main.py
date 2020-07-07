@@ -1,4 +1,8 @@
 import os
+import time
+import logging
+from datetime import datetime, timedelta
+
 from notion.client import NotionClient
 from notion.client import RecordStore
 from notion.records import Record
@@ -6,10 +10,10 @@ from notion.block import CollectionViewPageBlock
 from notion.block import TextBlock
 from notion.collection import CollectionRowBlock
 from notion.collection import NotionDate
+from notion.collection import Collection
 from imdb import IMDb
-from imdb import helpers
-import time
-from datetime import datetime, timedelta
+
+from logger import logger
 
 IMDB_TO_NOTION_TYPE = {
     "tv series": "series",
@@ -17,25 +21,23 @@ IMDB_TO_NOTION_TYPE = {
 }
 
 # Obtain the `token_v2` value by inspecting your browser cookies on a logged-in session on Notion.so
-notion_client = NotionClient(token_v2=os.environ["NOTION_TOKEN"], monitor=True,start_monitoring=True)
+NOTION_TOKEN = os.environ["NOTION_TOKEN"]
 
-imdb_client = IMDb()
-
-
-# Setup connection to the Notion movie watchlist databse 
-movie_database: CollectionViewPageBlock = notion_client.get_block("https://www.notion.so/09f8cae7e34149c28a7662ae07f4f599?v=ee890a52135c4f079cc8d0b1e1202e1f")
-movie_list = movie_database.collection.get_rows()
+# Global variables
+notion_client: NotionClient
+imdb_client: IMDb
 
 
 def fetch_imdb_movie(title: str) -> dict:
     """
-    Returns a dict containing the relevant movie information that
-    we want to put into the Notion database entry
+    Searches for the given title on IMDB and returns a dict containing the
+    relevant movie information that we want to put into the Notion database
+    entry
     """
 
-    print(f'Searching for the imdb object "{title}"')
+    logger.info(f'Searching for the imdb object "{title}"')
     searched_movie_list = imdb_client.search_movie(title)
-    movie_id = searched_movie_list[0].movieID # Use the first movie/series
+    movie_id = searched_movie_list[0].movieID  # Use the first movie/series
     movie = imdb_client.get_movie(movie_id)
 
     movie_data = {
@@ -47,66 +49,86 @@ def fetch_imdb_movie(title: str) -> dict:
         "genres": movie.get("genres")
     }
 
-    print(movie.get("plot"))
-    print("next")
-    print(movie["plot"][0].split("::")[0])
     return movie_data
 
-def look_for_new_entry(movie_list):
-    for movie in movie_list:
-        if not movie.imdb:
-            return movie
 
-def new_entry_callback():
-    # The list of movies
-    movie_list = movie_database.collection.get_rows()
-    movie: CollectionRowBlock = look_for_new_entry(movie_list)
+def handle_new_movie_block_in_collection(block_id: str):
+    movie_page = notion_client.get_block(block_id)
 
-    if movie:
-        print("Found new movie", movie)
-        
-        # Check if the movie was just recently added to the list
-        created_time: datetime = movie.created
-        cooldown: datetime = timedelta(minutes=1)
+    # Ugly hack to make sure that the user has had the time to enter
+    # the whole movie name
+    time.sleep(20)
 
-        if created_time + cooldown > datetime.utcnow():
-            print("Not yet considered done")
-            # Not yet considered "done edited"
-            return
+    if not movie_page.title:
+        # Empty title, user was probably to slow to enter the title
+        # or pressed the "new" button but then changed his/her mind.
+        # Nevertheless, we will not be able to fetch the imdb movie for this
+        # entry.
+        return
 
-        # fetch movie data from IMDB via the fetch function
-        movie_data = fetch_imdb_movie(movie.name)
-        # get movie title from notion entry
+    # Fetch the movie from imdb
+    imdb_movie = fetch_imdb_movie(movie_page.title)
+    imdb_url = f'https://www.imdb.com/title/tt{imdb_movie.get("movie_id")}'
 
-        # THE MOVIE'S ID NUMBER "https://www.imdb.com/title/tt" + idNum
+    # Set the properties in the Notion collection entry
+    movie_page.set_property("title", imdb_movie.get("title"))
+    movie_page.set_property("type", imdb_movie.get("type"))
+    movie_page.set_property("imdb", imdb_url)
+    # TODO fix so that it adds a tag if it does not exist
+    movie_page.set_property("genre", imdb_movie.get("genres"))
+    movie_page.set_property("rating", imdb_movie.get("rating"))
 
-        
-        movie.imdb = "https://www.imdb.com/title/tt" + movie_data.get("movie_id")
-        movie.name = movie_data.get("title")
-        movie.type = movie_data.get("type")
-        movie.rating = movie_data.get("rating")
-        movie.genre = movie_data.get("genres")
-        movie.children.add_new(TextBlock, title=movie_data.get("plot"))
-       
+    # Fetch the short description of the movie
+    movie_plot = imdb_movie["plot"][0].split("::")[0]
 
-        # take data and populate notion page
+    # Add movie plot to the page content in Notion
+    movie_page.children.add_new(TextBlock, title=movie_plot)
 
-        # if necessary, push changes to notion / update notion page with changes
 
-def poll_updates():
+def movie_collection_change_callback(record, **kwargs):
+    logger.debug("Processing collection change")
+    # Something happend in the list, lets see if anything was added
+
+    # Exampel on how the "changes" list looks like
+    # [('row_added', 'rows', '735303d9-0ad9-4ca4-8dfa-cd9bebb4170b')]
+    collection_changes: list = kwargs.get("changes")
+
+    for change in collection_changes:
+        change_action = change[0]
+        changed_block_id = change[2]
+
+        if change_action == "row_added":
+            # A new movie has been added to the list, lets fetch some data
+            # from IMDB
+            logger.info("New movie added to the list")
+            handle_new_movie_block_in_collection(changed_block_id)
+
+    logger.debug("Done processing collection changes")
+
+
+if __name__ == "__main__":
+
+    # Initialize connection to Notion
+    notion_client = NotionClient(
+        token_v2=NOTION_TOKEN,
+        monitor=True,
+        start_monitoring=True,
+        enable_caching=False
+    )
+
+    # Initialize the IMDB client
+    imdb_client = IMDb()
+
+    # Setup connection to movie list collection
+    moive_list_page: CollectionViewPageBlock = notion_client.get_block(
+        "https://www.notion.so/09f8cae7e34149c28a7662ae07f4f599?v=ee890a52135c4f079cc8d0b1e1202e1f")
+    movie_list_collection: Collection = moive_list_page.collection
+
+    # Subscribe to changes towards the movie list
+    movie_list_collection.add_callback(movie_collection_change_callback)
+
+    logger.debug("Setup complete")
+
     while True:
-        print("Refreshing")
-        movie_database.collection.refresh()
-        print("Refreshd")
-        new_entry_callback()
-        print("Callback done")
-        time.sleep(2)
-
-
-movie_database.collection.add_callback(new_entry_callback)
-poll_updates()
-
-# Its from this point the application runs
-
-# TODO Listen for changes on the database, when a new entry is added. Call new_entry_callback()
-# and pass the new entry page to the function
+        # Loop forever
+        pass
