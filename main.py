@@ -179,6 +179,13 @@ def handle_new_movie_block_in_collection(block_id: str):
 
     # Fetch the movie from imdb
     imdb_movie = fetch_imdb_movie(movie_page.title)
+
+    if not imdb_movie:
+        # Add error as entry content
+        movie_page.children.add_new(
+            TextBlock, title="Could not find this movie on IMDB.")
+        return
+
     imdb_url = f'https://www.imdb.com/title/tt{imdb_movie.get("movie_id")}'
 
     movie_emoji = find_emoji_for_movie(imdb_movie.get("title"))
@@ -193,7 +200,11 @@ def handle_new_movie_block_in_collection(block_id: str):
     movie_page.set_property("rating", imdb_movie.get("rating"))
 
     # Fetch the short description of the movie
-    movie_plot = imdb_movie["plot"][0].split("::")[0]
+    movie_plot = None
+    try:
+        movie_plot = imdb_movie["plot"][0].split("::")[0]
+    except:
+        pass
 
     # Add movie plot to the page content in Notion
     movie_page.children.add_new(TextBlock, title=movie_plot)
