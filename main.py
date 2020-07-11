@@ -26,12 +26,15 @@ IMDB_TO_NOTION_TYPE = {
 
 # Obtain the `token_v2` value by inspecting your browser cookies on a logged-in session on Notion.so
 NOTION_TOKEN = os.environ["NOTION_TOKEN"]
+NOTION_DATABASE_URL = os.environ["NOTION_DATABASE_URL"]
+
+DEFAULT_EMOJI: str = ":movie_camera:"
+WORDS_TO_REMOVE: list = ["the", "and", ",", ".", ":", ";", "-"]
 
 # Global variables
 notion_client: NotionClient
 imdb_client: IMDb
-default_emoji: str = ":movie_camera:"
-words_to_remove: list = ["the", "and", ",", "."]
+movie_list_collection: Collection
 
 
 def fetch_imdb_movie(title: str) -> dict:
@@ -73,10 +76,12 @@ colors = [
 
 
 def add_new_multi_select_value(prop, value, color=None):
+    global movie_list_collection
+
     if color is None:
         color = choice(colors)
 
-    collection_schema = collection.get("schema")
+    collection_schema = movie_list_collection.get("schema")
     prop_schema = next(
         (val for key, val in collection_schema.items() if val["name"] == prop), None)
 
@@ -95,7 +100,7 @@ def add_new_multi_select_value(prop, value, color=None):
         prop_schema["options"].append(
             {"color": color, "id": str(uuid1()), "value": value})
 
-        collection.set("schema", collection_schema)
+        movie_list_collection.set("schema", collection_schema)
         return True
 
 
@@ -114,7 +119,7 @@ def remove_multiple(title: str, to_remove: list) -> str:
 
 def find_emoji_for_movie(title: str):
     emoji_dict = emoji.unicode_codes.EMOJI_ALIAS_UNICODE
-    words_from_title = remove_multiple(title, words_to_remove).split()
+    words_from_title = remove_multiple(title, WORDS_TO_REMOVE).split()
 
     for word in words_from_title:
         emoji_name = next(
@@ -123,7 +128,7 @@ def find_emoji_for_movie(title: str):
             break
 
     if not emoji_name:
-        emoji_name = default_emoji
+        emoji_name = DEFAULT_EMOJI
 
     return emoji_name
 
@@ -200,13 +205,8 @@ if __name__ == "__main__":
 
     # Setup connection to movie list collection
     moive_list_page: CollectionViewPageBlock = notion_client.get_block(
-        "https://www.notion.so/09f8cae7e34149c28a7662ae07f4f599?v=ee890a52135c4f079cc8d0b1e1202e1f")
+        NOTION_DATABASE_URL)
     movie_list_collection: Collection = moive_list_page.collection
-
-    # TEST TO SE IF NEW GENRE CAN BE ADDED
-    collection_view = notion_client.get_collection_view(
-        "https://www.notion.so/09f8cae7e34149c28a7662ae07f4f599?v=ee890a52135c4f079cc8d0b1e1202e1f", force_refresh=True)
-    collection: Collection = collection_view.collection
 
     # Subscribe to changes towards the movie list
     movie_list_collection.add_callback(movie_collection_change_callback)
