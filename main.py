@@ -1,22 +1,25 @@
-import os
-import time
 import logging
+import os
 import re
-from datetime import datetime, timedelta
+import time
+from datetime import datetime
+from datetime import timedelta
 from random import choice
 from uuid import uuid1
 
-from notion.client import NotionClient
-from notion.client import RecordStore
-from notion.records import Record
+import emoji
+from dotenv import load_dotenv
+from imdb import IMDb
 from notion.block import CollectionViewPageBlock
 from notion.block import TextBlock
-from notion.collection import CollectionRowBlock
+from notion.client import NotionClient
+from notion.client import RecordStore
 from notion.collection import Collection
-from imdb import IMDb
-import emoji
+from notion.collection import CollectionRowBlock
+from notion.records import Record
 
 from logger import logger
+load_dotenv()
 
 IMDB_TO_NOTION_TYPE = {
     "tv mini series": "mini series",
