@@ -29,12 +29,29 @@ NOTION_TOKEN = os.environ["NOTION_TOKEN"]
 NOTION_DATABASE_URL = os.environ["NOTION_DATABASE_URL"]
 
 DEFAULT_EMOJI: str = ":movie_camera:"
+
+# The words to remove from the title when searching for an appropriate emoji for a movie
 WORDS_TO_REMOVE: list = ["the", "and", ",", ".", ":", ";", "-"]
+
+# The different types of colors available for the tags in notion
+COLORS = [
+    "default",
+    "gray",
+    "brown",
+    "orange",
+    "yellow",
+    "green",
+    "blue",
+    "purple",
+    "pink",
+    "red",
+]
 
 # Global variables
 notion_client: NotionClient
 imdb_client: IMDb
 movie_list_collection: Collection
+default_emoji: str = ":movie_camera:"
 
 
 def fetch_imdb_movie(title: str) -> dict:
@@ -61,27 +78,22 @@ def fetch_imdb_movie(title: str) -> dict:
     return movie_data
 
 
-colors = [
-    "default",
-    "gray",
-    "brown",
-    "orange",
-    "yellow",
-    "green",
-    "blue",
-    "purple",
-    "pink",
-    "red",
-]
-
-
 def add_new_multi_select_value(prop, value, color=None):
+    """
+    Adds a new genre if it doesn't already exist as a tag in notion
+
+    Args:
+        prop (str) - The name of the multi select property, e.g. "Genre"
+        value (str) - The value of the property, e.g. "Mystery"
+        color (str) - The color we want the property to have, defaults to random
+    """
     global movie_list_collection
 
     if color is None:
-        color = choice(colors)
+        color = choice(COLORS)
 
     collection_schema = movie_list_collection.get("schema")
+
     prop_schema = next(
         (val for key, val in collection_schema.items() if val["name"] == prop), None)
 
@@ -105,12 +117,20 @@ def add_new_multi_select_value(prop, value, color=None):
 
 
 def check_if_new_multi_select_should_be_added(genre_data):
+    """
+    Iterates through the movie's/serie's genres and checks if they exist in
+    notion as tags, if not they will be added
+    """
     for genre in genre_data:
         if add_new_multi_select_value("Genre", genre):
             logger.debug("A new genre was added")
 
 
 def remove_multiple(title: str, to_remove: list) -> str:
+    """
+    Removes unnecessary words from the movie's/serie's title, i.e words that
+    will not have give an appropriate emoji
+    """
     title = title.lower()
     for word in to_remove:
         title = title.replace(word, "")
@@ -118,10 +138,17 @@ def remove_multiple(title: str, to_remove: list) -> str:
 
 
 def find_emoji_for_movie(title: str):
+    """
+    Finds an "appropriate" emoji icon for the movie/serie by iterating through the words
+    in the title and find a corresponding emoji. If there is no corresponding emoji a
+    default emoji is used instead.
+    """
     emoji_dict = emoji.unicode_codes.EMOJI_ALIAS_UNICODE
     words_from_title = remove_multiple(title, WORDS_TO_REMOVE).split()
 
     for word in words_from_title:
+        # Searches through the emoji dict, if the "word" exists in the name of an emoji alias, this emoji is used
+        # E.g. if word = kiss, emoji_name will be kissing_heart, as it is a partial match
         emoji_name = next(
             (key for (key, val) in emoji_dict.items() if word in key), None)
         if emoji_name:
@@ -134,6 +161,9 @@ def find_emoji_for_movie(title: str):
 
 
 def handle_new_movie_block_in_collection(block_id: str):
+    """
+    Adds all the information to the movie block
+    """
     movie_page = notion_client.get_block(block_id)
 
     # Ugly hack to make sure that the user has had the time to enter
@@ -150,6 +180,7 @@ def handle_new_movie_block_in_collection(block_id: str):
     # Fetch the movie from imdb
     imdb_movie = fetch_imdb_movie(movie_page.title)
     imdb_url = f'https://www.imdb.com/title/tt{imdb_movie.get("movie_id")}'
+
     movie_emoji = find_emoji_for_movie(imdb_movie.get("title"))
 
     # Set the properties in the Notion collection entry
@@ -157,7 +188,6 @@ def handle_new_movie_block_in_collection(block_id: str):
     movie_page.set_property("type", imdb_movie.get("type"))
     movie_page.set_property("imdb", imdb_url)
     movie_page.icon = emoji.emojize(movie_emoji, use_aliases=True)
-    # TODO fix so that it adds a tag if it does not exist
     check_if_new_multi_select_should_be_added(imdb_movie.get("genres"))
     movie_page.set_property("genre", imdb_movie.get("genres"))
     movie_page.set_property("rating", imdb_movie.get("rating"))
@@ -170,6 +200,9 @@ def handle_new_movie_block_in_collection(block_id: str):
 
 
 def movie_collection_change_callback(record, **kwargs):
+    """
+    Looks for updates in the database, and manages them
+    """
     logger.debug("Processing collection change")
     # Something happend in the list, lets see if anything was added
 
