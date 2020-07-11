@@ -11,6 +11,7 @@ autopep8 = "*"
 imdbpy = "*"
 notion = "*"
 python-dotenv = "*"
+emoji = "*"
 
 [requires]
 python_version = "3.8"
