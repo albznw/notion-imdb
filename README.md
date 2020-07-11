@@ -94,12 +94,17 @@ If you just want to run this program and have it working out of the box in a mat
 
 ### Prerequisites
 * Docker, you can read more about how to install it [here](https://www.docker.com/get-started).
-* Docker compose, [installation guide](https://docs.docker.com/compose/install/#alternative-install-options). (This requires on your system Docker)
+
+### Installation
+Build the docker image
+```sh
+$ docker build -t imdb-notion .
+```
 
 ### Run application
 This will start the container and then run the application.
 ```sh
-$ docker-compose up
+$ docker run imdb-notion
 ```
 
 Done, go ahead and try to add a movie to your movie list and watch as the python applcation adds the relevant information to the entry.
