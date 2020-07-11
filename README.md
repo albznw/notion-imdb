@@ -81,13 +81,13 @@ The following command will install everything for you, if you have a system that
 $ sudo apt install python3.8 python3-pip
 ```
 
-Now, if you are a user that simply want to run this application and have it populate database entries in Notion with information from IMDB. Continue to [Usage](#usage).
+Now, if you are a user that simply want to run this application and have it populate database entries in Notion with information from IMDB.
 
-If you are a developer and would like to run and continue development on the application, continue to [Development setup](#development-setup) 
+If you are a developer and would like to run and continue development on the application, continue to [Development setup](#development-setup)
 
 
 ### Installation 
-Setup the python environment and install the necessasry dependencies
+Setup the python environment and install the necessary dependencies
 ```sh
 pipenv install
 ```
@@ -95,7 +95,7 @@ pipenv install
 
 <!-- This section explains how a user should install and use the application using docker -->
 ## Getting started using Docker
-If you just want to run this program and have it working out of the box in a matter of minutes. Docker is the way to go. You still have to do the step regarding the acquiring of the Notion token and database url though. [Aquire the Notion token and database url](#aquire-the-Notion-token-and-database-url)
+If you just want to run this program and have it working out of the box in a matter of minutes. Docker is the way to go. You still have to do the step regarding the acquiring of the Notion token and database url though. [Notion prerequisites](#notion-prerequisites)
 
 ### Prerequisites
 * Docker, you can read more about how to install it [here](https://www.docker.com/get-started).
@@ -130,9 +130,9 @@ pipenv install --dev
 Contributions are what make the open source community such an amazing place to be learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
 1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
+2. Create your Feature Branch (`git checkout -b feature/amazing-feature`)
+3. Commit your Changes (`git commit -m 'Adds amazing-feature'`)
+4. Push to the Branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
 
