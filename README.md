@@ -5,15 +5,20 @@ Automatically adds a movie's rating, genre, type, imdb-link, plot, and an emoji 
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
 * [About the Project](#about-the-project)
-  * [Built With](#built-with)
-* [Getting Started](#getting-started)
+* [Notion prerequisites](#notion-prerequisites)
+  * [The Notion token](#the-notion-token)
+  * [The database url](#the-database-url)
+  * [The database properties](#the-database-properties)
+* [Getting started](#getting-started)
   * [Prerequisites](#prerequisites)
   * [Installation](#installation)
-* [Usage](#usage)
-* [Roadmap](#roadmap)
+* [Getting started using Docker](#getting-started-using-docker)
+  * [Prerequisites](#prerequisites-1)
+  * [Installation](#installation-1)
+  * [Run application](#run-application)
+* [Development setup](#development-setup)
 * [Contributing](#contributing)
 * [License](#license)
-* [Contact](#contact)
 * [Acknowledgements](#acknowledgements)
 
 
@@ -29,7 +34,7 @@ This python application is listening to changes to our movie watchlist database.
 ## Notion prerequisites
 There is some things you have to setup in / acquire from Notion before we can get started.
 
-### The notion token
+### The Notion token
 Open your web browser and navigate to Notion. Once the page is loaded, press `F12`. You should now see the developer console open up. Press the top navigation `Application`. In this section you should see a bunch of things to the left. One of which says `Cookies` under `Storage`, press the _Notion cookie_ and then locate the `token_v2` cookie. The following picture shows how it look like in Chrome.
 ![chrome-developer-tools-image]  
 Copy the value of this token and add it to the `.env_example` file.
@@ -59,7 +64,7 @@ Make sure that the movie watchlist has the right properties. Add the following t
 
 <!-- GETTING STARTED USER-->
 <!-- This section explains how a user should install and use the application -->
-## Getting Started
+## Getting started
 To get the application to run locally, follow these simple steps.
 The application is running inside a python virtual environment for simplicity reasons and amongs other things it makes dealing with package dependencies easier.
 
@@ -133,7 +138,7 @@ Contributions are what make the open source community such an amazing place to b
 
 <!-- LICENSE -->
 ## License
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 
 
 <!-- ACKNOWLEDGEMENTS -->
