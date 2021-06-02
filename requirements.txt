@@ -1,21 +1,23 @@
-beautifulsoup4==4.9.1
+-i https://pypi.org/simple/
+beautifulsoup4==4.9.3
 bs4==0.0.1
-cached-property==1.5.1
-certifi==2020.6.20
-chardet==3.0.4
+cached-property==1.5.2
+certifi==2021.5.30
+chardet==4.0.0
 commonmark==0.9.1
 dictdiffer==0.8.1
 emoji==0.5.4
+greenlet==1.1.0 ; python_version >= '3'
 idna==2.10
-IMDbPY==6.8
-lxml==4.5.2
+imdbpy==6.8
+lxml==4.6.3
 notion==0.0.25
 python-dotenv==0.14.0
-python-slugify==4.0.1
-pytz==2020.1
-requests==2.24.0
-soupsieve==2.0.1
-SQLAlchemy==1.3.18
+python-slugify==5.0.2
+pytz==2021.1
+requests==2.25.1
+soupsieve==2.2.1 ; python_version >= '3.0'
+sqlalchemy==1.4.17
 text-unidecode==1.3
 tzlocal==2.1
-urllib3==1.25.9
+urllib3==1.26.5
