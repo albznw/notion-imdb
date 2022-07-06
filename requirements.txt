@@ -8,7 +8,7 @@ dictdiffer==0.8.1
 emoji==0.5.4
 idna==2.10
 IMDbPY==6.8
-lxml==4.5.2
+lxml==4.9.1
 notion==0.0.25
 python-dotenv==0.14.0
 python-slugify==4.0.1
